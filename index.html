@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Video Player</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --secondary: #ec4899;
+            --accent: #f59e0b;
+            --dark: #0f172a;
+            --darker: #020617;
+            --light: #f8fafc;
+            --gray: #64748b;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 100%);
+            min-height: 100vh;
+            color: var(--light);
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            animation: slideDown 0.8s ease;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--secondary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            letter-spacing: -2px;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--gray);
+            font-weight: 300;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 50px;
+            animation: fadeIn 1s ease 0.3s both;
+        }
+
+        .video-section {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .video-section:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(99, 102, 241, 0.5);
+            transform: translateY(-5px);
+        }
+
+        .video-player {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: #000;
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: var(--light);
+        }
+
+        .section-desc {
+            color: var(--gray);
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+        }
+
+        .upload-area {
+            border: 2px dashed rgba(99, 102, 241, 0.5);
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .upload-area.dragover {
+            border-color: var(--secondary);
+            background: rgba(236, 72, 153, 0.15);
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .upload-text {
+            color: var(--light);
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .upload-subtext {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--light);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .video-info {
+            background: rgba(99, 102, 241, 0.1);
+            border-left: 4px solid var(--primary);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .info-label {
+            color: var(--gray);
+        }
+
+        .info-value {
+            color: var(--light);
+            font-weight: 600;
+        }
+
+        .playlist-section {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            grid-column: 1 / -1;
+            animation: fadeIn 1s ease 0.6s both;
+        }
+
+        .playlist {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .playlist-item {
+            background: rgba(99, 102, 241, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            padding: 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-size: 0.85rem;
+            word-break: break-word;
+        }
+
+        .playlist-item:hover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .playlist-item.active {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-color: var(--secondary);
+            font-weight: 600;
+        }
+
+        .player-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .control-label {
+            color: var(--gray);
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        input[type="range"] {
+            min-width: 100px;
+            cursor: pointer;
+            -webkit-appearance: none;
+            appearance: none;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            height: 4px;
+            border-radius: 2px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--gray);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .playlist {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.5);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.8);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎬 Dynamic Video Player</h1>
+            <p class="subtitle">Upload and manage your video collection with style</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Video Player Section -->
+            <div class="video-section">
+                <h2 class="section-title">Now Playing</h2>
+                <p class="section-desc">Your current video playback</p>
+                
+                <div class="video-player">
+                    <video id="mainVideo" controls>
+                        <source src="https://commondatastorage.googleapis.com/gtv-videos-library/sample/BigBuckBunny.mp4" type="video/mp4">
+                    </video>
+                </div>
+
+                <div class="video-info" id="videoInfo" style="display: none;">
+                    <div class="info-item">
+                        <span class="info-label">Duration:</span>
+                        <span class="info-value" id="duration">00:00</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Current:</span>
+                        <span class="info-value" id="currentTime">00:00</span>
+                    </div>
+                </div>
+
+                <div class="player-controls">
+                    <div class="control-group">
+                        <label class="control-label">Speed:</label>
+                        <input type="range" id="speedControl" min="0.5" max="2" step="0.25" value="1">
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button class="btn btn-primary" onclick="document.getElementById('videoInput').click()">
+                        📁 Upload Video
+                    </button>
+                    <button class="btn btn-secondary" onclick="loadSampleVideo()">
+                        🎥 Sample Video
+                    </button>
+                </div>
+                <input type="file" id="videoInput" accept="video/*">
+            </div>
+
+            <!-- Upload Section -->
+            <div class="video-section">
+                <h2 class="section-title">Quick Upload</h2>
+                <p class="section-desc">Drag and drop your video file</p>
+                
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📹</div>
+                    <div class="upload-text">Drop your video here</div>
+                    <div class="upload-subtext">or click to browse</div>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <h3 style="color: var(--light); margin-bottom: 10px; font-size: 0.95rem;">Supported Formats:</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; color: var(--gray); font-size: 0.85rem;">
+                        <div>✓ MP4</div>
+                        <div>✓ WebM</div>
+                        <div>✓ OGG</div>
+                        <div>✓ MOV</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Playlist Section -->
+        <div class="playlist-section">
+            <h2 class="section-title">📚 Playlist</h2>
+            <p class="section-desc">Your uploaded videos</p>
+            <div class="playlist" id="playlist">
+                <div class="empty-state" style="grid-column: 1 / -1;">
+                    <div class="empty-state-icon">🎬</div>
+                    <p>No videos yet. Upload one to get started!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const mainVideo = document.getElementById('mainVideo');
+        const videoInput = document.getElementById('videoInput');
+        const uploadArea = document.getElementById('uploadArea');
+        const playlist = document.getElementById('playlist');
+        const speedControl = document.getElementById('speedControl');
+        const videoInfo = document.getElementById('videoInfo');
+        
+        let videos = JSON.parse(localStorage.getItem('videos')) || [];
+
+        // Initialize playlist
+        function renderPlaylist() {
+            if (videos.length === 0) {
+                playlist.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1 / -1;">
+                        <div class="empty-state-icon">🎬</div>
+                        <p>No videos yet. Upload one to get started!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            playlist.innerHTML = videos.map((video, index) => `
+                <div class="playlist-item" onclick="playVideo(${index})" title="${video.name}">
+                    🎥 ${video.name.substring(0, 15)}${video.name.length > 15 ? '...' : ''}
+                </div>
+            `).join('');
+        }
+
+        // File upload
+        videoInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const video = {
+                        name: file.name,
+                        data: event.target.result,
+                        id: Date.now()
+                    };
+                    videos.push(video);
+                    localStorage.setItem('videos', JSON.stringify(videos));
+                    renderPlaylist();
+                    playVideo(videos.length - 1);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('video/')) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const video = {
+                        name: file.name,
+                        data: event.target.result,
+                        id: Date.now()
+                    };
+                    videos.push(video);
+                    localStorage.setItem('videos', JSON.stringify(videos));
+                    renderPlaylist();
+                    playVideo(videos.length - 1);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        uploadArea.addEventListener('click', () => {
+            videoInput.click();
+        });
+
+        // Play video
+        function playVideo(index) {
+            const video = videos[index];
+            mainVideo.src = video.data;
+            mainVideo.load();
+            mainVideo.play();
+            
+            const items = document.querySelectorAll('.playlist-item');
+            items.forEach((item, i) => {
+                item.classList.toggle('active', i === index);
+            });
+
+            updateVideoInfo();
+        }
+
+        // Load sample video
+        function loadSampleVideo() {
+            mainVideo.src = 'https://commondatastorage.googleapis.com/gtv-videos-library/sample/BigBuckBunny.mp4';
+            mainVideo.load();
+            mainVideo.play();
+            document.querySelectorAll('.playlist-item').forEach(item => item.classList.remove('active'));
+            updateVideoInfo();
+        }
+
+        // Update video info
+        function updateVideoInfo() {
+            videoInfo.style.display = mainVideo.src ? 'block' : 'none';
+            mainVideo.addEventListener('loadedmetadata', () => {
+                document.getElementById('duration').textContent = formatTime(mainVideo.duration);
+            });
+        }
+
+        mainVideo.addEventListener('timeupdate', () => {
+            document.getElementById('currentTime').textContent = formatTime(mainVideo.currentTime);
+        });
+
+        speedControl.addEventListener('change', (e) => {
+            mainVideo.playbackRate = parseFloat(e.target.value);
+        });
+
+        function formatTime(seconds) {
+            if (!seconds || isNaN(seconds)) return '00:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // Initialize
+        renderPlaylist();
+        updateVideoInfo();
+    </script>
+</body>
+</html>
